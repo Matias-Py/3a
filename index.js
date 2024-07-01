@@ -30,10 +30,6 @@ let contactos = [
     }
 ]
 
-app.get('/', (request, response) => {
-    response.send('<h1>Esta es mi API!</h1>')
-})
-
 app.get('/contactos', (request, response) => {
     response.json(contactos)
 })
