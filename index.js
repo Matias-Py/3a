@@ -4,6 +4,7 @@ app.use(express.json())
 const cors = require('cors')
 app.use(cors())
 const { v4: uuidv4 } = require('uuid');
+app.use(express.static('dist'))
 
 
 let contactos = [
