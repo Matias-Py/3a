@@ -5,78 +5,53 @@ const cors = require('cors')
 app.use(cors())
 const { v4: uuidv4 } = require('uuid');
 app.use(express.static('dist'))
+const Contacto = require('./models/mongo')
 
-
-let contactos = [
-    { 
-      "id": 1,
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": 2,
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": 3,
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": 4,
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
 
 app.get('/contactos', (request, response) => {
-    response.json(contactos)
+    Contacto.find({}).then(contactos => {
+        response.json(contactos)
+    })
 })
 
 app.get('/contactos/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const contacto = contactos.find(contacto => contacto.id === id)
-    if(contacto){
+    Contacto.findById(request.params.id).then(contacto => {
         response.json(contacto)
-    }else{
-        response.status(404).end()
-    }
+    })
 })
 
-app.post('/contactos',(request, response) => {
-    const body = request.body
 
-    if (!body.name || !body.number) {
-        return response.status(400).json({
-            error: 'Falta el nombre o el número del contacto'
-        });
+app.post('/contactos', (request, response) => {
+    const body = request.body;
+  
+    if (!body.name) {
+      return response.status(400).json({ error: 'Debe ingresar un nombre' });
     }
-
-    // Verifica si el nombre ya existe en la lista de contactos
-    const nombreExistente = contactos.find(contacto => contacto.name === body.name);
-    if (nombreExistente) {
-        return response.status(400).json({
-            error: 'El nombre del contacto ya existe en la agenda'
-        });
-    }
-    
-    const contacto = {
-        id: uuidv4(),
-        name: body.name,
-        number: body.number
-    }
-    contactos.push(contacto)
-    response.json(contacto)
-})
+  
+    const contacto = new Contacto({
+      name: body.name,
+      number: body.number,
+    });
+  
+    contacto.save()
+    .then((contactoGuardado) => {
+      response.json(contactoGuardado);
+      console.log('Enviado a Mongo!');
+    })
+    .catch(error=> {
+      console.error(error);
+      response.status(500).json({ error: 'Error interno del servidor' });
+    })
+  });
+  
 
 app.delete('/contactos/:id', (request, response) => {
-    const id = Number(request.params.id)
-    contactos = contactos.filter(contacto => contacto.id !== id)
-    console.log('contacto eliminado')
-    response.status(204).end()
+    Contacto.findByIdAndDelete(request.params.id)
+      .then(resultado => {
+        response.status(204).end();
+    })
+      .catch(error => next(error));
 })
-
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
